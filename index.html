@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ASVAB Practice Test - Challenging</title>
+<style>
+body { font-family: Arial; max-width: 800px; margin: auto; padding: 20px; }
+h2 { margin-top: 40px; }
+.question { margin-bottom: 20px; }
+.options label { display: block; }
+.hidden { display: none; }
+button { margin-top: 20px; padding: 10px 15px; }
+</style>
+</head>
+<body>
+<h1>ASVAB Practice Test (Challenging)</h1>
+<div id="test-container"></div>
+<div id="result" class="hidden">
+<h2>Test Complete!</h2>
+<p id="score"></p>
+<button onclick="location.reload()">Try Again</button>
+</div>
+<script>
+const sections = [
+{
+name: "Word Knowledge",
+questions: [
+{ q: "What is the synonym of 'cursory'?", options: ["Thorough", "Hasty", "Accurate", "Slow"], answer: 1 },
+{ q: "What does 'benevolent' most nearly mean?", options: ["Evil", "Generous", "Greedy", "Hostile"], answer: 1 },
+{ q: "Select the antonym of 'arduous'.", options: ["Easy", "Challenging", "Difficult", "Demanding"], answer: 0 },
+{ q: "What is the meaning of 'inept'?", options: ["Skilled", "Clumsy", "Smart", "Efficient"], answer: 1 },
+{ q: "What is the synonym of 'lucid'?", options: ["Clear", "Crazy", "Dim", "Insane"], answer: 0 },
+{ q: "Antonym of 'meticulous'?", options: ["Careless", "Detailed", "Thorough", "Organized"], answer: 0 },
+{ q: "Meaning of 'concur'?", options: ["Argue", "Agree", "Delay", "Disagree"], answer: 1 },
+{ q: "What is a synonym for 'succinct'?", options: ["Lengthy", "Concise", "Verbose", "Redundant"], answer: 1 },
+{ q: "Antonym of 'coerce'?", options: ["Force", "Persuade", "Free", "Compel"], answer: 2 },
+{ q: "What does 'prudent' mean?", options: ["Reckless", "Wise", "Foolish", "Unwise"], answer: 1 }
+]
+},
+{
+name: "Paragraph Comprehension",
+questions: [
+{ q: "Passage: 'The rain had been falling for days...'\nWhy did she go running?", options: ["She liked the rain", "She was preparing for something", "She wanted to avoid mud", "She needed new shoes"], answer: 1 },
+{ q: "Passage: 'Electric cars are becoming more common...'\nWhat is the primary reason?", options: ["Gas prices", "Battery tech & pollution concerns", "Car design", "Laws"], answer: 1 },
+{ q: "Passage: 'When food is exposed to air...'\nPurpose of refrigeration?", options: ["Make cold", "Slow bacteria", "Taste better", "Change texture"], answer: 1 },
+{ q: "Passage: 'The professor paused after each point...'\nWhat can we infer?", options: ["Talks fast", "Wants understanding", "Memorizes", "Dislikes notes"], answer: 1 },
+{ q: "Passage: 'Despite the delay, the train arrived...'\nHow did passengers feel?", options: ["Angry", "Refreshed", "Tired but relieved", "Energetic"], answer: 2 },
+{ q: "Passage: 'Photosynthesis allows plants...'\nWhy is it important?", options: ["Creates rain", "Generates energy for life", "Turns plants green", "Makes them grow in dark"], answer: 1 },
+{ q: "Passage: 'His leadership was marked...'\nThis suggests?", options: ["Lazy", "Quick but controversial decisions", "Follows orders", "Avoids choices"], answer: 1 },
+{ q: "Passage: 'The lake was unusually still...'\nDescribe the lake:", options: ["Stormy", "Calm", "Animal-filled", "Frozen"], answer: 1 },
+{ q: "Passage: 'Many inventions arise from mistakes...'\nInference?", options: ["All are mistakes", "Great discoveries from errors", "Scientists never plan", "Penicillin on purpose"], answer: 1 },
+{ q: "Passage: 'Though she failed at first...'\nWhat does this tell us?", options: ["She gave up", "She was persistent", "She didn’t try", "She succeeded easily"], answer: 1 }
+]
+},
+{
+name: "Arithmetic Reasoning",
+questions: [
+{ q: "If a car travels 240 miles in 4 hours, what's speed?", options: ["50 mph", "55 mph", "60 mph", "65 mph"], answer: 2 },
+{ q: "Jacket is $120 with 25% off. Sale price?", options: ["$90", "$95", "$100", "$85"], answer: 0 },
+{ q: "Recipe needs 2/3 cup oil. Tripled?", options: ["1.5", "2", "2.25", "2.75"], answer: 2 },
+{ q: "If 5x = 35, x = ?", options: ["6", "7", "8", "9"], answer: 1 },
+{ q: "15% of $200 = ?", options: ["$25", "$30", "$35", "$40"], answer: 1 },
+{ q: "Train: 300 mi in 5 hrs. Speed?", options: ["55 mph", "60 mph", "65 mph", "70 mph"], answer: 1 },
+{ q: "How many inches in 2.5 ft?", options: ["24", "30", "36", "42"], answer: 1 },
+{ q: "30 pencils @ 5 for $1 = ?", options: ["$4", "$5", "$6", "$7"], answer: 2 },
+{ q: "$12.75/hr × 8 hrs = ?", options: ["$100", "$102", "$105", "$110"], answer: 2 },
+{ q: "1.5 liters = how many ml?", options: ["150", "1500", "500", "1000"], answer: 1 }
+]
+},
+{
+name: "Math Knowledge",
+questions: [
+{ q: "(3 + 4) × 2 = ?", options: ["10", "12", "14", "16"], answer: 2 },
+{ q: "Solve: 2x + 3 = 11", options: ["3", "4", "5", "6"], answer: 1 },
+{ q: "√144 = ?", options: ["10", "11", "12", "13"], answer: 2 },
+{ q: "Which is prime?", options: ["9", "15", "17", "21"], answer: 2 },
+{ q: "3² + 4² = ?", options: ["12", "18", "25", "30"], answer: 2 },
+{ q: "Simplify: 6x - 2x", options: ["4", "4x", "6x", "8x"], answer: 1 },
+{ q: "Pattern: 2, 6, 12, 20, ?", options: ["24", "28", "30", "36"], answer: 2 },
+{ q: "x² = 49. x = ?", options: ["5", "6", "7", "8"], answer: 2 },
+{ q: "Triangle: 50° + 60°, third angle = ?", options: ["60°", "70°", "80°", "90°"], answer: 1 },
+{ q: "Simplify: 5(2x + 3)", options: ["10x + 3", "2x + 15", "10x + 15", "7x + 3"], answer: 2 }
+]
+}
+];
+
+let currentSection = 0, currentQuestion = 0, score = 0;
+const container = document.getElementById("test-container");
+
+function loadQuestion() {
+container.innerHTML = "";
+const section = sections[currentSection];
+const question = section.questions[currentQuestion];
+
+const title = document.createElement("h2");
+title.textContent = `${section.name} - Question ${currentQuestion + 1}`;
+container.appendChild(title);
+
+const qDiv = document.createElement("div");
+qDiv.className = "question";
+qDiv.textContent = question.q;
+container.appendChild(qDiv);
+
+const optionsDiv = document.createElement("div");
+optionsDiv.className = "options";
+question.options.forEach((opt, i) => {
+const label = document.createElement("label");
+const input = document.createElement("input");
+input.type = "radio";
+input.name = "answer";
+input.value = i;
+label.appendChild(input);
+label.appendChild(document.createTextNode(opt));
+optionsDiv.appendChild(label);
+});
+container.appendChild(optionsDiv);
+
+const btn = document.createElement("button");
+btn.textContent = "Next";
+btn.onclick = () => {
+const selected = document.querySelector('input[name="answer"]:checked');
+if (!selected) return alert("Please select an answer.");
+if (parseInt(selected.value) === question.answer) score++;
+currentQuestion++;
+if (currentQuestion >= section.questions.length) {
+currentSection++;
+currentQuestion = 0;
+if (currentSection >= sections.length) {
+showResult();
+return;
+}
+}
+loadQuestion();
+};
+container.appendChild(btn);
+}
+
+function showResult() {
+container.classList.add("hidden");
+document.getElementById("result").classList.remove("hidden");
+document.getElementById("score").textContent = `Your score: ${score} / 40`;
+}
+
+loadQuestion();
+</script>
+</body>
+</html>
