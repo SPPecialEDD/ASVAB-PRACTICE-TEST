@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ASVAB Practice Test (Hard • 50 Q)</title>
+  <link rel="stylesheet" href="style.css"/>
+  <meta name="description" content="Harder ASVAB practice test with longer passages. Sections: Word Knowledge, Paragraph Comprehension, Arithmetic Reasoning, Math Knowledge.">
+</head>
+<body>
+  <header class="site-header">
+    <h1>ASVAB Practice Test — Hard (50 Questions)</h1>
+    <p class="sub">Weighted like the real thing. Paragraphs are longer by request.</p>
+  </header>
+
+  <main>
+    <section class="intro card">
+      <h2>How it works</h2>
+      <ul>
+        <li><strong>Sections:</strong> Word Knowledge (15), Paragraph Comprehension (10), Arithmetic Reasoning (15), Math Knowledge (10)</li>
+        <li><strong>Timing (optional):</strong> Enable a per-section timer for extra realism.</li>
+        <li><strong>Scoring:</strong> Section breakdowns, total % correct, and an <em>estimated</em> AFQT percentile (WK + PC + AR).</li>
+      </ul>
+      <div class="controls">
+        <label class="toggle">
+          <input id="timerToggle" type="checkbox">
+          <span>Enable per-section timer</span>
+        </label>
+        <button id="startBtn" class="btn primary">Start Test</button>
+      </div>
+    </section>
+
+    <section id="testArea" class="hidden">
+      <div class="section-header">
+        <h2 id="sectionTitle"></h2>
+        <div class="right">
+          <div id="timer" class="timer hidden" aria-live="polite">00:00</div>
+          <div id="progress" class="progress">Q <span id="qIndex">1</span>/<span id="qTotal">0</span></div>
+        </div>
+      </div>
+
+      <article id="questionCard" class="card">
+        <div id="passageWrap" class="passage hidden"></div>
+        <h3 id="prompt"></h3>
+        <form id="choices" class="choices"></form>
+        <div class="nav">
+          <button id="prevBtn" class="btn" type="button">Back</button>
+          <button id="nextBtn" class="btn primary" type="button">Next</button>
+        </div>
+      </article>
+    </section>
+
+    <section id="results" class="hidden">
+      <article class="card">
+        <h2>Results</h2>
+        <div id="summary"></div>
+        <div id="breakdown"></div>
+        <details class="details">
+          <summary>Show answer key</summary>
+          <div id="answerKey"></div>
+        </details>
+        <div class="controls">
+          <button id="restartBtn" class="btn">Restart</button>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>Built for practice. Not affiliated with DoD. AFQT reported here is an estimate.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;background:#0b0f16;color:#e9eef6}
+.site-header{padding:24px 16px;text-align:center;background:linear-gradient(180deg,#0f1522,#0b0f16)}
+.site-header h1{margin:0 0 8px;font-weight:800;font-size:clamp(22px,3vw,32px)}
+.sub{opacity:.8;margin:0}
+main{max-width:920px;margin:0 auto;padding:16px}
+.card{background:#111726;border:1px solid #22304a;border-radius:14px;padding:18px 16px;box-shadow:0 10px 24px rgba(0,0,0,.25)}
+h2{margin-top:0}
+ul{margin:8px 0 0 20px}
+.controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.btn{background:#1b2437;border:1px solid #2a3a5d;color:#e9eef6;padding:10px 14px;border-radius:10px;cursor:pointer;font-weight:600}
+.btn:hover{background:#233049}
+.btn.primary{background:#2b5cff;border-color:#3a6aff}
+.btn.primary:hover{background:#3a6aff}
+.toggle{display:flex;align-items:center;gap:8px}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin:16px 0}
+.right{display:flex;align-items:center;gap:12px}
+.timer{padding:6px 10px;border-radius:8px;background:#17233a;border:1px solid #2a3a5d}
+.progress{opacity:.8}
+.hidden{display:none}
+.passage{background:#0f1626;border:1px solid #203253;border-radius:10px;padding:12px;margin-bottom:10px;line-height:1.55}
+.choices{display:grid;gap:8px;margin-top:12px}
+.choices label{display:flex;gap:10px;align-items:flex-start;padding:10px;border:1px solid #22304a;border-radius:10px;background:#0f1626;cursor:pointer}
+.choices input{margin-top:4px}
+.nav{display:flex;justify-content:space-between;margin-top:14px}
+.details summary{cursor:pointer}
+.site-footer{padding:24px 16px;text-align:center;opacity:.7}
+#answerKey{margin-top:10px;line-height:1.5}
+/* ASVAB Hard Practice (50Q)
+   Sections:
+   - WK (15)
+   - PC (10) with longer passages (4–6 sentences)
+   - AR (15)
+   - MK (10)
+   Scoring: section % + estimated AFQT percentile from WK+PC+AR (approx).
+*/
+const SECTIONS = [
+  { id: "WK", name: "Word Knowledge", count: 15, timeMin: 9 },
+  { id: "PC", name: "Paragraph Comprehension", count: 10, timeMin: 13 },
+  { id: "AR", name: "Arithmetic Reasoning", count: 15, timeMin: 39 },
+  { id: "MK", name: "Math Knowledge", count: 10, timeMin: 18 },
+];
+
+// 50 questions
+const QUESTIONS = [
+  // === Word Knowledge (15) ===
+  { section:"WK", prompt:"The scientist’s explanation was so **convoluted** that few understood it.", choices:["Simple","Complicated","Clear","Ordinary"], answer:1 },
+  { section:"WK", prompt:"Her **reluctance** to speak up surprised everyone.", choices:["Willingness","Hesitation","Anger","Confidence"], answer:1 },
+  { section:"WK", prompt:"The child’s laughter was **contagious**.", choices:["Harmful","Infectious","Dangerous","Fake"], answer:1 },
+  { section:"WK", prompt:"The artist had a very **meticulous** style.", choices:["Careless","Detailed","Hasty","Average"], answer:1 },
+  { section:"WK", prompt:"The king was known for his **benevolence**.", choices:["Cruelty","Kindness","Wealth","Power"], answer:1 },
+  { section:"WK", prompt:"The witness gave a **credible** account of the event.", choices:["Believable","False","Brief","Detailed"], answer:0 },
+  { section:"WK", prompt:"The general gave an **ultimatum** to the opposing forces.", choices:["Suggestion","Warning","Final demand","Agreement"], answer:2 },
+  { section:"WK", prompt:"The manager’s plan was **feasible** given the budget.", choices:["Impossible","Practical","Temporary","Unwise"], answer:1 },
+  { section:"WK", prompt:"His tone was **apathetic** during the meeting.", choices:["Energetic","Indifferent","Angry","Hopeful"], answer:1 },
+  { section:"WK", prompt:"The criminal tried to **elude** the police.", choices:["Escape","Fight","Distract","Bribe"], answer:0 },
+  { section:"WK", prompt:"The solution was **ephemeral**.", choices:["Long-lasting","Temporary","Expensive","Permanent"], answer:1 },
+  { section:"WK", prompt:"The chef’s work was **impeccable**.", choices:["Flawed","Perfect","Average","Poor"], answer:1 },
+  { section:"WK", prompt:"The student’s essay was **coherent** and well-organized.", choices:["Confusing","Logical","Short","Unrelated"], answer:1 },
+  { section:"WK", prompt:"The soldier displayed great **fortitude** in battle.", choices:["Courage","Weakness","Anger","Patience"], answer:0 },
+  { section:"WK", prompt:"His excuse sounded **implausible**.", choices:["Believable","Unlikely","Simple","True"], answer:1 },
+
+  // === Paragraph Comprehension (10 with longer passages) ===
+  { section:"PC", passage:"During the late nineteenth century, the rapid expansion of railroads reshaped the United States. The 1869 completion of the transcontinental line connected coastal markets and dramatically lowered travel times. Freight that once took weeks could move in days, and ticket prices fell as competition increased. This network spurred new towns and encouraged settlement far from older cities. Yet the boom also intensified conflicts with Native nations, altered wildlife migration, and accelerated extraction of timber and coal.", 
+    prompt:"Which statement best captures a major effect of the transcontinental railroad?", choices:["It slowed trade between regions.","It encouraged settlement in remote areas.","It reduced industrial extraction.","It eliminated river transport."], answer:1 },
+  { section:"PC", passage:"Humpback whales complete some of the longest migrations of any mammal. In summer, they feed in cold waters rich with plankton and small fish, building energy reserves. As winter approaches, they travel thousands of miles to tropical seas that are calmer and warmer. Calves born there face fewer thermal stresses and predators. After nursing, mothers guide their young back toward the feeding grounds, retracing routes learned across generations.",
+    prompt:"Why do humpbacks travel to tropical waters in winter?", choices:["For abundant food supply.","To give birth in safer conditions.","To avoid storms entirely.","To shed parasites."], answer:1 },
+  { section:"PC", passage:"Before GPS and radar, lighthouses functioned as vital waypoints for mariners. Their lenses produced distinct flash intervals or colors, allowing sailors to identify their position along hazardous coasts. Even today, automated lights remain as redundancy. Electronics can fail from power loss, salt corrosion, or software faults, but a beam sweeping through fog still communicates simple, reliable information: land is near, danger may be ahead.", 
+    prompt:"According to the passage, why are lighthouses still relevant?", choices:["They are cheaper than GPS.","They back up electronic navigation.","They can guide airplanes.","They prevent fog formation."], answer:1 },
+  { section:"PC", passage:"Henry Ford did not invent the assembly line, but he refined and popularized it for automobile production. Complex vehicle construction was divided into small, repeatable motions, each assigned to workers or tools. Output soared while unit cost dropped, putting cars within reach of middle-class families. However, the repetition caused fatigue and turnover, so companies experimented with wages, rotation, and rest breaks to stabilize their labor force.", 
+    prompt:"What was a major consequence of assembly line production?", choices:["Increased car prices.","Greater product affordability.","More varied tasks per worker.","Slower output."], answer:1 },
+  { section:"PC", passage:"Nicknamed the 'lungs of the Earth,' the Amazon rainforest stores carbon and hosts unmatched biodiversity. Logging, mining, and slash-and-burn agriculture fragment habitats and dry the forest edges. Scientists warn that widespread loss could disrupt rainfall patterns across South America and beyond. Local and international efforts now combine reforestation, enforcement against illegal clearing, and incentives for sustainable crops to slow the damage.", 
+    prompt:"What primary threat to the Amazon is emphasized?", choices:["Invasive species.","Deforestation.","Volcanic activity.","Overtourism."], answer:1 },
+  { section:"PC", passage:"Urban planners increasingly consider how heat waves interact with city design. Asphalt and concrete absorb sunlight, creating 'urban heat islands' that trap warmth after sunset. Planting trees, using reflective roofing, and opening shaded public spaces can reduce temperatures by several degrees. These adaptations not only protect vulnerable residents but also lower energy demand from air conditioning during peak hours.", 
+    prompt:"Which solution is suggested for urban heat islands?", choices:["Adding more asphalt.","Increasing night lighting.","Planting more trees and reflective roofs.","Raising building heights."], answer:2 },
+  { section:"PC", passage:"Battery technology is a bottleneck for renewable energy. Solar panels and wind turbines generate power intermittently, often out of sync with demand. Large, grid-scale batteries can store surplus electricity for later use, smoothing supply and reducing reliance on fossil backups. While cost and material sourcing pose challenges, steady improvements in chemistry and manufacturing are making deployments more common worldwide.", 
+    prompt:"What role do grid-scale batteries play?", choices:["They replace power lines.","They store excess energy to balance supply.","They increase fossil fuel use.","They only work with wind power."], answer:1 },
+  { section:"PC", passage:"Antibiotics transformed medicine by turning lethal infections into manageable conditions. Yet overuse in clinics and agriculture has accelerated resistance, allowing some bacteria to neutralize drugs that once worked reliably. Public health agencies promote targeted prescriptions, hygiene, and surveillance to slow this trend. Without such measures, routine surgeries and minor wounds could again become dangerous.", 
+    prompt:"What is the main concern highlighted?", choices:["Antibiotics are too expensive.","Antibiotics cause every allergy.","Bacterial resistance is rising due to overuse.","Hospitals will eliminate surgery."], answer:2 },
+  { section:"PC", passage:"Space telescopes observe wavelengths blocked by Earth’s atmosphere, revealing structures from newborn stars to distant galaxies. Because they orbit above weather and light pollution, their images are exceptionally stable. However, repairs are difficult and launches are costly. Engineers thus design instruments with redundant systems and carefully plan limited observation time to maximize scientific return.", 
+    prompt:"Why are space telescopes placed above the atmosphere?", choices:["To avoid light pollution and atmospheric blocking.","To be closer to the Sun.","To communicate faster with Earth.","So they can be repaired easily."], answer:0 },
+  { section:"PC", passage:"Wildfire behavior depends on fuel, weather, and terrain. Dry grasses ignite easily, while strong winds push flames uphill and loft embers miles ahead. Fire managers use controlled burns and create defensible space around communities to reduce intensity when wildfires occur. Though elimination is impossible, risk can be managed through preparation and ecology-based planning.", 
+    prompt:"What is one strategy used to manage wildfire risk?", choices:["Stopping all burns permanently.","Controlled burns and defensible space.","Planting only tall trees near homes.","Relying solely on rainfall."], answer:1 },
+
+  // === Arithmetic Reasoning (15) ===
+  { section:"AR", prompt:"A mechanic buys 4 brake rotors at $38.50 each and 3 sets of pads at $24.75 each. If tax is 8%, what is the total cost? (Round to the nearest cent.)", choices:["$251.87","$259.74","$264.33","$271.20"], answer:2 },
+  { section:"AR", prompt:"A tank holds 480 gallons. It is 35% full. How many more gallons are needed to fill it?", choices:["312","288","240","156"], answer:1 },
+  { section:"AR", prompt:"A truck averages 18 mpg. On a 435-mile trip, gas costs $3.79/gal. Approximate the fuel cost.", choices:["$72","$82","$92","$102"], answer:2 },
+  { section:"AR", prompt:"A welder completes a job in 6 hours. An apprentice alone would take 10 hours. Working together, how long will the job take (in hours, nearest tenth)?", choices:["3.8","3.6","3.4","3.2"], answer:1 },
+  { section:"AR", prompt:"Tickets are $12 for adults and $7 for students. If 260 tickets were sold and revenue was $2,480, how many adult tickets were sold?", choices:["120","130","140","150"], answer:2 },
+  { section:"AR", prompt:"A recipe calls for 2.5 cups of flour for 8 servings. How much flour is needed for 14 servings?", choices:["3.9 c","4.1 c","4.4 c","4.6 c"], answer:0 },
+  { section:"AR", prompt:"A machine produces 1,200 bolts in 8 hours. At the same rate, how many in 14 hours?", choices:["1,800","2,100","2,400","2,700"], answer:1 },
+  { section:"AR", prompt:"The sale price after a 15% discount is $68. What was the original price (nearest cent)?", choices:["$77.65","$79.99","$80.00","$84.71"], answer:3 },
+  { section:"AR", prompt:"A cylindrical drum has radius 1.5 ft and height 4 ft. What’s its volume? (Use π≈3.14)", choices:["21.2 ft³","25.4 ft³","28.3 ft³","42.4 ft³"], answer:3 },
+  { section:"AR", prompt:"A store increases an item’s price by 20% and then discounts the new price by 25%. Overall effect?", choices:["5% decrease","10% decrease","No change","5% increase"], answer:0 },
+  { section:"AR", prompt:"A contractor mixes concrete in a ratio 1:2:3 (cement:sand:gravel). If 18 cubic feet of gravel are used, how much total concrete mix (in cubic feet) is made?", choices:["30","27","24","36"], answer:0 },
+  { section:"AR", prompt:"If x is 30% of y, and y is 50% of z, then x is what percent of z?", choices:["10%","12%","15%","18%"], answer:1 },
+  { section:"AR", prompt:"A 15-ft ladder leans against a wall with its base 9 ft from the wall. How high up the wall does it reach? (nearest tenth)", choices:["10.9 ft","11.6 ft","12.0 ft","12.3 ft"], answer:0 },
+  { section:"AR", prompt:"An engine rebuild estimate: parts $1,450, labor $85/hr for 9.5 hours, shop fee 2% of parts+labor. Total?", choices:["$2,220.50","$2,311.30","$2,342.10","$2,401.65"], answer:2 },
+  { section:"AR", prompt:"A pipe fills a pool in 12 hours; a drain empties it in 20 hours. If both are open, how long to fill? (nearest tenth)", choices:["17.1 h","18.5 h","30.0 h","48.0 h"], answer:0 },
+
+  // === Math Knowledge (10) ===
+  { section:"MK", prompt:"Solve: 5x − 2 = 3x + 10", choices:["x=4","x=5","x=6","x=7"], answer:2 },
+  { section:"MK", prompt:"Simplify: (2a^2b)(3ab^3)", choices:["6a^2b^3","6a^3b^3","6a^3b^4","5a^3b^3"], answer:2 },
+  { section:"MK", prompt:"If f(x)=2x^2−3x+1, find f(−2).", choices:["11","15","19","21"], answer:0 },
+  { section:"MK", prompt:"Solve for y: 3/4 = y/12", choices:["y=6","y=8","y=9","y=10"], answer:1 },
+  { section:"MK", prompt:"The slope of the line through (−2,5) and (4,−1) is:", choices:["−1","−2","1","2"], answer:0 },
+  { section:"MK", prompt:"A right triangle has legs 7 and 24. Hypotenuse length?", choices:["23","24","25","26"], answer:2 },
+  { section:"MK", prompt:"Simplify: (x^2 − 9)/(x − 3), x≠3", choices:["x−3","x+3","x^2+3","x^2−3"], answer:1 },
+  { section:"MK", prompt:"A circle has circumference 31.4 (π≈3.14). Radius?", choices:["4","5","6","7"], answer:1 },
+  { section:"MK", prompt:"Solve: (3/5)x − 4 = 5", choices:["x=9","x=12","x=13.5","x=15"], answer:3 },
+  { section:"MK", prompt:"Factor: x^2 − 11x + 28", choices:["(x−7)(x−4)","(x−14)(x+2)","(x−9)(x−2)","(x−8)(x−3)"], answer:0 },
+];
+
+// Sanity check
+(function validateCounts(){
+  const counts = SECTIONS.map(s => ({
+    id: s.id,
+    n: QUESTIONS.filter(q => q.section===s.id).length
+  }));
+  const total = counts.reduce((a,c)=>a+c.n,0);
+  if (total !== 50) console.warn("Expected 50 questions, found:", total, counts);
+})();
+
+// State
+let currentSectionIndex = -1;
+let sectionQuestions = [];
+let currentQ = 0;
+let answers = []; // { sectionId, indexInSection, choice }
+let sectionScores = {}; // { WK:{correct,total}, ... }
+let timerEnabled = false;
+let timeRemaining = 0;
+let timerId = null;
+
+// Elements
+const startBtn = document.getElementById("startBtn");
+const timerToggle = document.getElementById("timerToggle");
+const testArea = document.getElementById("testArea");
+const resultsEl = document.getElementById("results");
+const sectionTitle = document.getElementById("sectionTitle");
+const qIndexEl = document.getElementById("qIndex");
+const qTotalEl = document.getElementById("qTotal");
+const promptEl = document.getElementById("prompt");
+const choicesEl = document.getElementById("choices");
+const prevBtn = document.getElementById("prevBtn");
+const nextBtn = document.getElementById("nextBtn");
+const passageWrap = document.getElementById("passageWrap");
+const timerEl = document.getElementById("timer");
+const summaryEl = document.getElementById("summary");
+const breakdownEl = document.getElementById("breakdown");
+const answerKeyEl = document.getElementById("answerKey");
+const restartBtn = document.getElementById("restartBtn");
+
+timerToggle.addEventListener("change", (e)=>{
+  timerEnabled = e.target.checked;
+});
+
+startBtn.addEventListener("click", ()=>{
+  // reset
+  currentSectionIndex = -1;
+  answers = [];
+  sectionScores = {};
+  resultsEl.classList.add("hidden");
+  testArea.classList.remove("hidden");
+  nextSection();
+});
+
+prevBtn.addEventListener("click", ()=>{
+  if (currentQ>0){ currentQ--; renderQuestion(); }
+});
+
+nextBtn.addEventListener("click", ()=>{
+  const choice = getSelectedChoice();
+  if (choice === null){
+    alert("Pick an answer to continue.");
+    return;
+  }
+  saveAnswer(choice);
+  if (currentQ < sectionQuestions.length-1){
+    currentQ++;
+    renderQuestion();
+  } else {
+    endSection();
+  }
+});
+
+restartBtn.addEventListener("click", ()=>{
+  window.scrollTo({top:0, behavior:"smooth"});
+  document.getElementById("timerToggle").checked = false;
+  timerEnabled = false;
+  resultsEl.classList.add("hidden");
+  testArea.classList.add("hidden");
+});
+
+function nextSection(){
+  clearTimer();
+
+  currentSectionIndex++;
+  if (currentSectionIndex >= SECTIONS.length){
+    showResults();
+    return;
+  }
+  const sec = SECTIONS[currentSectionIndex];
+
+  sectionTitle.textContent = `${sec.name}`;
+  sectionQuestions = QUESTIONS.filter(q=>q.section===sec.id);
+  currentQ = 0;
+  qTotalEl.textContent = sectionQuestions.length.toString();
+  renderQuestion();
+
+  if (timerEnabled){
+    timeRemaining = Math.max(1, Math.round(sec.timeMin*60));
+    timerEl.classList.remove("hidden");
+    tickTimer();
+  } else {
+    timerEl.classList.add("hidden");
+  }
+}
+
+function renderQuestion(){
+  const q = sectionQuestions[currentQ];
+  qIndexEl.textContent = (currentQ+1).toString();
+
+  if (q.passage){
+    passageWrap.classList.remove("hidden");
+    passageWrap.textContent = q.passage;
+  } else {
+    passageWrap.classList.add("hidden");
+    passageWrap.textContent = "";
+  }
+  promptEl.innerHTML = q.prompt;
+
+  choicesEl.innerHTML = "";
+  q.choices.forEach((opt, i)=>{
+    const id = `c_${currentSectionIndex}_${currentQ}_${i}`;
+    const label = document.createElement("label");
+    const input = document.createElement("input");
+    input.type = "radio";
+    input.name = "choice";
+    input.value = i;
+    input.id = id;
+    const span = document.createElement("span");
+    span.textContent = opt;
+    label.appendChild(input);
+    label.appendChild(span);
+    choicesEl.appendChild(label);
+  });
+
+  const prev = answers.find(a=>a.sectionId===SECTIONS[currentSectionIndex].id && a.indexInSection===currentQ);
+  if (prev){
+    const radios = choicesEl.querySelectorAll("input[name='choice']");
+    if (radios[prev.choice]) radios[prev.choice].checked = true;
+  }
+
+  prevBtn.disabled = currentQ===0;
+  nextBtn.textContent = currentQ===sectionQuestions.length-1 ? "Finish Section" : "Next";
+}
+
+function getSelectedChoice(){
+  const checked = choicesEl.querySelector("input[name='choice']:checked");
+  return checked ? Number(checked.value) : null;
+}
+
+function saveAnswer(choice){
+  const secId = SECTIONS[currentSectionIndex].id;
+  const key = answers.findIndex(a=>a.sectionId===secId && a.indexInSection===currentQ);
+  if (key>=0){
+    answers[key].choice = choice;
+  } else {
+    answers.push({ sectionId: secId, indexInSection: currentQ, choice });
+  }
+}
+
+function endSection(){
+  const secId = SECTIONS[currentSectionIndex].id;
+  const qs = sectionQuestions;
+  let correct = 0;
+  qs.forEach((q, idx)=>{
+    const a = answers.find(x=>x.sectionId===secId && x.indexInSection===idx);
+    if (a && a.choice === q.answer) correct++;
+  });
+  sectionScores[secId] = { correct, total: qs.length };
+
+  nextSection();
+}
+
+function tickTimer(){
+  updateTimerUI();
+  timerId = setInterval(()=>{
+    timeRemaining--;
+    updateTimerUI();
+    if (timeRemaining <= 0){
+      clearTimer();
+      alert("Time's up for this section!");
+      endSection();
+    }
+  },1000);
+}
+
+function clearTimer(){
+  if (timerId){ clearInterval(timerId); timerId = null; }
+}
+
+function updateTimerUI(){
+  const mm = Math.floor(timeRemaining/60).toString().padStart(2,"0");
+  const ss = Math.floor(timeRemaining%60).toString().padStart(2,"0");
+  timerEl.textContent = `${mm}:${ss}`;
+}
+
+// Rough AFQT estimate from WK+PC+AR raw % -> percentile curve (approx)
+function estimateAFQT(sectionScores){
+  const needed = ["WK","PC","AR"];
+  let correct = 0, total = 0;
+  needed.forEach(id=>{
+    if (sectionScores[id]){
+      correct += sectionScores[id].correct;
+      total += sectionScores[id].total;
+    }
+  });
+  if (total===0) return {percent:0, message:"n/a"};
+  const raw = correct/total; // 0..1
+  const k = 9, m = 0.62;
+  const p = 100 * (1/(1+Math.exp(-k*(raw-m))));
+  const pct = Math.max(1, Math.min(99, Math.round(p)));
+  let msg = "mid-range";
+  if (pct >= 70) msg = "strong";
+  else if (pct >= 50) msg = "solid";
+  else if (pct >= 31) msg = "developing";
+  else msg = "needs work";
+  return { percent: pct, message: msg, rawPct: Math.round(raw*100) };
+}
+
+function showResults(){
+  testArea.classList.add("hidden");
+  resultsEl.classList.remove("hidden");
+
+  let grandCorrect = 0, grandTotal = 0;
+  const lines = [];
+  SECTIONS.forEach(sec=>{
+    const s = sectionScores[sec.id] || {correct:0,total:0};
+    grandCorrect += s.correct; grandTotal += s.total;
+    const pct = s.total ? Math.round(100*s.correct/s.total) : 0;
+    lines.push(`<div class="line"><strong>${sec.name}:</strong> ${s.correct}/${s.total} (${pct}%)</div>`);
+  });
+  const overallPct = grandTotal ? Math.round(100*grandCorrect/grandTotal) : 0;
+  const afqt = estimateAFQT(sectionScores);
+
+  summaryEl.innerHTML = `
+    <p><strong>Total:</strong> ${grandCorrect}/${grandTotal} (${overallPct}%)</p>
+    <p><strong>Estimated AFQT (WK+PC+AR):</strong> ${afqt.percent}th percentile <span style="opacity:.7">(approx • raw ~${afqt.rawPct}% correct)</span></p>
+    <p style="opacity:.8">AFQT here is an estimate. Real ASVAB uses scaled standard scores.</p>
+  `;
+  breakdownEl.innerHTML = lines.join("");
+
+  const keyLines = [];
+  SECTIONS.forEach(sec=>{
+    keyLines.push(`<h4>${sec.name}</h4>`);
+    const qs = QUESTIONS.filter(q=>q.section===sec.id);
+    qs.forEach((q, i)=>{
+      const letter = String.fromCharCode(65 + q.answer);
+      keyLines.push(`<div>Q${i+1}: ${letter}</div>`);
+    });
+  });
+  answerKeyEl.innerHTML = keyLines.join("");
+}
